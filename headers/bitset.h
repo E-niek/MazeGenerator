@@ -3,9 +3,9 @@
 
 #include "utilities.h"
 
-typedef unsigned char bitset[];
+typedef uint8_t* bitset;
 
-bool writeBit(bitset maze, int byte, int bit, int value);
-char readBit(bitset maze, int byte, int bit);
+void writeBit(bitset maze, int byte, int bit, int value);
+uint8_t readBit(bitset maze, int byte, int bit);
 
 #endif
