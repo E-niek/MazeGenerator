@@ -1,13 +1,11 @@
 #include "bitset.h"
 
-bool writeBit(bitset maze, int byte, int bit, int value)
+void writeBit(bitset maze, int byte, int bit, int value)
 {
-    maze[byte] = value == true ? 1 << bit | maze[byte] : ~(1 << bit | ~maze[byte]);
-
-    return true;
+    maze[byte] = value == 0 ? ~(1 << bit | ~maze[byte]) : 1 << bit | maze[byte] ;
 }
 
-char readBit(bitset maze, int byte, int bit)
+uint8_t readBit(bitset maze, int byte, int bit)
 {
     return (1 << bit & maze[byte]) == 1 << bit ? 1 : 0;
 }
