@@ -54,3 +54,4 @@ dkms.conf
 # Other stuff
 output
 run
+.vscode/
