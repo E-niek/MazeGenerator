@@ -5,8 +5,8 @@
 
 typedef uint8_t* bitset;
 
-void writeBit(bitset maze, int byte, int bit, int value);
-uint8_t readBit(bitset maze, int bitIndex);
-void clearBitset(bitset maze, int length);
+void writeBit(bitset array, int bitIndex, int value);
+uint8_t readBit(bitset array, int bitIndex);
+void clearBitset(bitset array, int length);
 
 #endif

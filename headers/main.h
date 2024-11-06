@@ -5,8 +5,8 @@
 #include "bitset.h"
 #include "random.h"
 
-void generateMaze(bitset maze, int row, int column, int lastRow, int lastColumn);
-int possibleDirection(bitset maze, int row, int column, int side);
+void generateMaze(int row, int column, int lastRow, int lastColumn, int run);
+int possibleDirection(int row, int column, int side);
 void printMaze();
 
 #endif
