@@ -52,6 +52,9 @@ Mkfile.old
 dkms.conf
 
 # Other stuff
-output
 run
+output
+test.c
+test_run
+test_output
 .vscode/
