@@ -1,7 +1,7 @@
 #ifndef BITSET_H
 #define BITSET_H
 
-#include "utilities.h"
+#include <stdint.h>
 
 typedef uint8_t* bitset;
 
