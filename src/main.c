@@ -1,4 +1,4 @@
-#include "headers/main.h"
+#include "../include/main.h"
 
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
@@ -38,11 +38,6 @@ int main(int argc, char **argv)
     generateMaze(0, 0);
     printMaze();
 
-    // for(int i = 0; i < wallsBitCount; i++)
-    // {
-    //     printf("Wallindex: %d has value: %d\n", i, readBit(walls, i));
-    // }
-
     free(walls);
     free(visited);
 
@@ -74,18 +69,22 @@ void generateMaze(int row, int column)
     switch(directions[randInt(0, possibleDirections - 1, seed)])
     {
         case LEFT:
+            // 'break' the left wall
             writeBit(walls, 2 * (row * columns) - row + column, 0);
             column--;
             break;
         case RIGHT:
+            // 'break' the right wall
             writeBit(walls, 2 * (row * columns) - row + column + 1, 0);
             column++;
             break;
         case UP:
+            // 'break' the top wall
             writeBit(walls, 2 * (row * columns) - row - columns + column + 1, 0);
             row--;
             break;
         case DOWN:
+            // 'break' the bottom wall
             writeBit(walls, 2 * (row * columns) - row + columns + column, 0);
             row++;
             break;
@@ -93,6 +92,8 @@ void generateMaze(int row, int column)
 
     writeBit(visited, row * columns + column, 1);
     generateMaze(row, column);
+    
+    // we substract one, because we already did go to one of the possible directions above
     for(int i = 0; i < possibleDirections - 1; i++)
     {
         generateMaze(currentRow, currentColumn);
