@@ -33,7 +33,10 @@ int main(int argc, char **argv)
     visited = malloc(visitedByteCount);
     // we don't need to use clearBitset() because default value already is 0
 
-    generateMaze(0, 0, 0, 0, 0);
+    // we set the first bit to 1, because else the first cell is 'never visited'
+    writeBit(visited, 0, 1);
+    generateMaze(0, 0);
+    printMaze();
 
     free(walls);
     free(visited);
@@ -41,68 +44,57 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void generateMaze(int row, int column, int lastRow, int lastColumn, int run)
+void generateMaze(int row, int column)
 {
-    int index = 0;
+    int currentRow = row;
+    int currentColumn = column;
+
+    int possibleDirections = 0;
     int directions[4];
 
     for(int i = 0; i < 4; i++)
     {
-        if(possibleDirection(row, column, i))
+        if(possibleDirection(currentRow, currentColumn, i) == true)
         {
-            directions[index] = i;
-            index ++;
+            directions[possibleDirections] = i;
+            possibleDirections++;
         }
-    }
-    for(int i = 0; i < index; i++)
-    {
-        printf("Possible direction: %d\n", directions[i]);
     }
 
-    if(index > 0)
-    {
-        if(index > 1)
-        {
-            lastRow = row;
-            lastColumn = column;
-        }
-        
-        switch(directions[randomInt(0, index - 1, seed)])
-        {
-            case LEFT:
-                printf("LEFT\n");
-                writeBit(walls, 2 * (row * columns) - row + column, 0);
-                writeBit(visited, row * columns + column, 1);
-                generateMaze(row, column - 1, lastRow, lastColumn, run + 1);
-                break;
-            case RIGHT:
-                printf("RIGHT\n");
-                writeBit(walls, 2 * (row * columns) - row + column + 1, 0);
-                writeBit(visited, row * columns + column, 1);
-                generateMaze(row, column + 1, lastRow, lastColumn, run + 1);
-                break;
-            case UP:
-                printf("UP\n");
-                writeBit(walls, 2 * (row * columns) - row - columns + column + 1, 0);
-                writeBit(visited, row * columns + column, 1);
-                generateMaze(row - 1, column, lastRow, lastColumn, run + 1);
-                break;
-            case DOWN:
-                printf("DOWN\n");
-                writeBit(walls, 2 * (row * columns) - row + columns + column, 0);
-                writeBit(visited, row * columns + column, 1);
-                generateMaze(row + 1, column, lastRow, lastColumn, run + 1);
-                break;
-        }
-    }else if(run < rows * columns - 1)
+    if(possibleDirections == 0)
     {
         return;
-        // printf("GOING BACK\n");
-        // generateMaze(lastRow, lastColumn, lastRow, lastColumn, run + 1);
-    }else
+    }
+
+    switch(directions[randInt(0, possibleDirections - 1, seed)])
     {
-        printMaze();
-        // printf("Stopped\n");
+        case LEFT:
+            printf("LEFT\n");
+            writeBit(walls, 2 * (row * columns) - row + column, 0);
+            column--;
+            break;
+        case RIGHT:
+            printf("RIGHT\n");
+            writeBit(walls, 2 * (row * columns) - row + column + 1, 0);
+            column++;
+            break;
+        case UP:
+            printf("UP\n");
+            writeBit(walls, 2 * (row * columns) - row - columns + column + 1, 0);
+            row--;
+            break;
+        case DOWN:
+            printf("DOWN\n");
+            writeBit(walls, 2 * (row * columns) - row + columns + column, 0);
+            row++;
+            break;
+    }
+
+    writeBit(visited, row * columns + column, 1);
+    generateMaze(row, column);
+    for(int i = 0; i < possibleDirections - 1; i++)
+    {
+        generateMaze(currentRow, currentColumn);
     }
 }
 
@@ -155,6 +147,16 @@ void printMaze()
 #   #   #   #
 #       #   #
 # # # # # # #
+
+# # # # # # # # #
+#   #   #   #   #
+# # # # # # # # #
+#   #   #   #   #
+# # # # # # # # #
+#   #   #   #   #
+# # # # # # # # #
+#   #   #   #   #
+# # # # # # # # #
 
 
 */

@@ -3,6 +3,6 @@
 
 #include "utilities.h"
 
-int randomInt(int min, int max, int* seed);
+int randInt(int min, int max, int* seed);
 
 #endif
