@@ -1,6 +1,6 @@
 #include "headers/main.h"
 
-enum DIRECTION { LEFT, RIGHT, UP, DOWN };
+enum Direction { LEFT, RIGHT, UP, DOWN };
 
 int rows = 20;
 int columns = 20;
@@ -38,6 +38,11 @@ int main(int argc, char **argv)
     generateMaze(0, 0);
     printMaze();
 
+    // for(int i = 0; i < wallsBitCount; i++)
+    // {
+    //     printf("Wallindex: %d has value: %d\n", i, readBit(walls, i));
+    // }
+
     free(walls);
     free(visited);
 
@@ -69,22 +74,18 @@ void generateMaze(int row, int column)
     switch(directions[randInt(0, possibleDirections - 1, seed)])
     {
         case LEFT:
-            printf("LEFT\n");
             writeBit(walls, 2 * (row * columns) - row + column, 0);
             column--;
             break;
         case RIGHT:
-            printf("RIGHT\n");
             writeBit(walls, 2 * (row * columns) - row + column + 1, 0);
             column++;
             break;
         case UP:
-            printf("UP\n");
             writeBit(walls, 2 * (row * columns) - row - columns + column + 1, 0);
             row--;
             break;
         case DOWN:
-            printf("DOWN\n");
             writeBit(walls, 2 * (row * columns) - row + columns + column, 0);
             row++;
             break;
@@ -127,36 +128,26 @@ void printMaze()
     char wall = '#';
     char path = ' ';
     
-    int wallIndex = 0;
-    for(int row = 0; row < rows * 2 + 1; row++)
+    for(int row = 0; row < rows; row++)
     {
         for(int column = 0; column < columns; column++)
         {
-            printf("%c %c ", wall, wall);
+            // check the wall index above the current row and column
+            printf("%c %c ", wall, readBit(walls, 2 * (row * columns) - row - columns + column + 1) == 0 && row > 0 ? path : wall);
+        }
+        printf("%c\n", wall);
+
+        for(int column = 0; column < columns; column++)
+        {
+            // check the wall index left to the current row and column
+            printf("%c %c ", readBit(walls, 2 * (row * columns) - row + column) == 0 && column > 0 ? path : wall, path);
         }
         printf("%c\n", wall);
     }
+
+    for(int column = 0; column < columns; column++)
+    {
+            printf("%c %c ", wall, wall);
+    }
+    printf("%c", wall);
 }
-
-/*
-
-# # # # # # #
-#       #   #
-# # #   #   #
-#   #       #
-#   #   #   #
-#       #   #
-# # # # # # #
-
-# # # # # # # # #
-#   #   #   #   #
-# # # # # # # # #
-#   #   #   #   #
-# # # # # # # # #
-#   #   #   #   #
-# # # # # # # # #
-#   #   #   #   #
-# # # # # # # # #
-
-
-*/
