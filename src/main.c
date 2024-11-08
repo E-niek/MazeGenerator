@@ -38,6 +38,12 @@ int main(int argc, char **argv)
 {
     fileName = argv[0];
 
+    if(argc == 1)
+    {
+        printHelp();
+        exit(0);
+    }
+
     int option;
     while((option = getopt(argc, argv, "r:c:s:o:n:f:h")) != -1)
     {
@@ -87,13 +93,7 @@ int main(int argc, char **argv)
     // we set the first bit to 1, because else the first cell is 'never visited'
     writeBit(visited, 0, 1);
 
-    if(loadFromFile)
-    {
-        loadMaze();
-    }else
-    {
-        generateMaze(0, 0);
-    }
+    generateMaze(0, 0);
 
     if(printToStdout || loadFromFile)
     {
@@ -136,22 +136,22 @@ void generateMaze(int row, int column)
     {
         case LEFT:
             // 'break' the left wall
-            writeBit(walls, 2 * (row * columns) - row + column, 0);
+            writeBit(walls, 2 * (row * columns) - row + column - 1, 0);
             column--;
             break;
         case RIGHT:
             // 'break' the right wall
-            writeBit(walls, 2 * (row * columns) - row + column + 1, 0);
+            writeBit(walls, 2 * (row * columns) - row + column, 0);
             column++;
             break;
         case UP:
             // 'break' the top wall
-            writeBit(walls, 2 * (row * columns) - row - columns + column + 1, 0);
+            writeBit(walls, 2 * (row * columns) - row - columns + column, 0);
             row--;
             break;
         case DOWN:
             // 'break' the bottom wall
-            writeBit(walls, 2 * (row * columns) - row + columns + column, 0);
+            writeBit(walls, 2 * (row * columns) - row + columns + column - 1, 0);
             row++;
             break;
     }
@@ -172,19 +172,19 @@ int possibleDirection(int row, int column, int side)
     {
         case LEFT:
             // calculate which bit is left to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row + column) == 1 && readBit(visited, row * columns + column - 1) == 0 && column > 0 ? true : false;
+            return readBit(walls, 2 * (row * columns) - row + column - 1) == 1 && readBit(visited, row * columns + column - 1) == 0 && column > 0 ? true : false;
             break;
         case RIGHT:
             // calculate which bit is right to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row + column + 1) == 1 && readBit(visited, row * columns + column + 1) == 0 && column < columns - 1 ? true : false;
+            return readBit(walls, 2 * (row * columns) - row + column) == 1 && readBit(visited, row * columns + column + 1) == 0 && column < columns - 1 ? true : false;
             break;
         case UP:
             // calculate which bit is up to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row - columns + column + 1) == 1 && readBit(visited, row * columns + column - columns) == 0 && row > 0 ? true : false;
+            return readBit(walls, 2 * (row * columns) - row - columns + column) == 1 && readBit(visited, row * columns + column - columns) == 0 && row > 0 ? true : false;
             break;
         case DOWN:
             // calculate which bit is down to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row + columns + column) == 1 && readBit(visited, row * columns + column + columns) == 0 && row < rows - 1 ? true : false;
+            return readBit(walls, 2 * (row * columns) - row + columns + column - 1) == 1 && readBit(visited, row * columns + column + columns) == 0 && row < rows - 1 ? true : false;
             break;
     }
     return false;
@@ -240,14 +240,14 @@ void printStdout()
         for(int column = 0; column < columns; column++)
         {
             // check the wall index above the current row and column
-            printf("%c %c ", wall, readBit(walls, 2 * (row * columns) - row - columns + column + 1) == 0 && row > 0 ? path : wall);
+            printf("%c %c ", wall, readBit(walls, 2 * (row * columns) - row - columns + column) == 0 && row > 0 ? path : wall);
         }
         printf("%c\n", wall);
 
         for(int column = 0; column < columns; column++)
         {
             // check the wall index left to the current row and column
-            printf("%c %c ", readBit(walls, 2 * (row * columns) - row + column) == 0 && column > 0 ? path : wall, path);
+            printf("%c %c ", readBit(walls, 2 * (row * columns) - row + column - 1) == 0 && column > 0 ? path : wall, path);
         }
         printf("%c\n", wall);
     }
@@ -270,7 +270,7 @@ void saveMaze(int wallsBytecount)
         fprintf(file, "NULL\n");
     }else
     {
-        fprintf(file, "%d\n", seed);
+        fprintf(file, "%d\n", *seed);
     }
     
     for(int i = 0; i < wallsBytecount; i++)
