@@ -4,8 +4,6 @@ Maze generator, written in C
 ### Options:
 - -r: amount of rows
 - -c: amount of columns
-- -r: amount of rows
-- -c: amount of columns
 - -s: seed
 - -o: output; file, stdout
 - -n: if the output is a file, specify the name of the file here
