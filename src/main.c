@@ -6,37 +6,103 @@ int rows = 20;
 int columns = 20;
 bitset walls;
 bitset visited;
+
 int *seed = NULL;
+bool printToStdout = true;
+bool saveToFile = false;
+char *saveFileName = "maze.maze";
+bool loadFromFile = false;
+char *loadFileName;
+
+char *fileName;
+
+void printHelp()
+{
+    printf
+    (
+        "USAGE: %s [OPTIONS]\n"
+        "\n"
+        "Available options:\n"
+        "   -r: " "amount of rows\n"
+        "   -c: " "amount of columns\n"
+        "   -s: " "seed\n"
+        "   -o: " "output; file, stdout\n"
+        "   -n: " "if the output is a file, specify the name of the file here\n"
+        "   -f: " "input a file to generate the maze from\n"
+        "   -h: " "shows this help"
+        "\n", fileName
+    );
+}
 
 int main(int argc, char **argv)
 {
-    for(int i = 1; i < argc; i++)
+    fileName = argv[0];
+
+    int option;
+    while((option = getopt(argc, argv, "r:c:s:o:n:f:h")) != -1)
     {
-        rows = strcmp(argv[i], "-r") == 0 ? atoi(argv[i + 1]) : rows;
-        columns = strcmp(argv[i], "-c") == 0 ? atoi(argv[i + 1]) : columns;
-        if(strcmp(argv[i], "-s") == 0)
+        switch(option)
         {
-            int seedValue = atoi(argv[i + 1]);
-            seed = &seedValue;
+            case 'r':
+                rows = atoi(optarg);
+                break;
+            case 'c':
+                columns = atoi(optarg);
+                break;
+            case 's':
+                int seedValue = atoi(optarg);
+                seed = &seedValue;
+                break;
+            case 'o':
+                printToStdout = strstr(optarg, "stdout") == NULL ? false : true;
+                saveToFile = strstr(optarg, "file") != NULL ? true : false;
+                break;
+            case 'n':
+                saveFileName = optarg;
+                break;
+            case 'f':
+                loadFromFile = true;
+                loadFileName = optarg;
+                break;
+            case 'h':
+            case '?':
+                printHelp();
+                exit(1);
+                break;
         }
     }
 
     // 0 of there is no wall, 1 if there is
-    int wallsBitCount = 2 * (rows * columns) - rows - columns;
-    int wallsByteCount = (wallsBitCount + 7) / 8;
-    walls = malloc(wallsByteCount);
-    clearBitset(walls, wallsByteCount);
+    int wallsBitcount = 2 * (rows * columns) - rows - columns;
+    int wallsBytecount = (wallsBitcount + 7) / 8;
+    walls = malloc(wallsBytecount);
+    clearBitset(walls, wallsBytecount);
 
     // 0 if cell isn't visited, 1 if it is
-    int visitedBitCount = rows * columns;
-    int visitedByteCount = (visitedBitCount + 7) / 8;
-    visited = malloc(visitedByteCount);
+    int visitedBitcount = rows * columns;
+    int visitedBytecount = (visitedBitcount + 7) / 8;
+    visited = malloc(visitedBytecount);
     // we don't need to use clearBitset() because default value already is 0
 
     // we set the first bit to 1, because else the first cell is 'never visited'
     writeBit(visited, 0, 1);
-    generateMaze(0, 0);
-    printMaze();
+
+    if(loadFromFile)
+    {
+        loadMaze();
+    }else
+    {
+        generateMaze(0, 0);
+    }
+
+    if(printToStdout || loadFromFile)
+    {
+        printStdout();
+    }
+    if(saveToFile)
+    {
+        saveMaze(wallsBytecount);
+    }
 
     free(walls);
     free(visited);
@@ -124,7 +190,47 @@ int possibleDirection(int row, int column, int side)
     return false;
 }
 
-void printMaze()
+void loadMaze()
+{
+    FILE *file = fopen(loadFileName, "r");
+
+    if(file == NULL)
+    {
+        fprintf(stderr, "%s: cannot open file -- '%s'\n", fileName, loadFileName);
+        printHelp();
+        exit(1);
+    }
+
+    char buffer[6];
+
+    int row;
+    int wallsIndex = 0;
+    while(fgets(buffer, 6, file))
+    {
+        switch(row)
+        {
+            case 0:
+                rows = atoi(buffer);
+                break;
+            case 1:
+                columns = atoi(buffer);
+                break;
+            case 2:
+                int seedValue = atoi(buffer);
+                seed = strcmp(buffer, "NULL") == 0 ? NULL : &seedValue;
+                break;
+            default:
+                walls[wallsIndex] = atoi(buffer);
+                wallsIndex++;
+                break;
+        }
+        row++;
+    }
+
+    fclose(file);
+}
+
+void printStdout()
 {
     char wall = '#';
     char path = ' ';
@@ -151,4 +257,26 @@ void printMaze()
             printf("%c %c ", wall, wall);
     }
     printf("%c", wall);
+}
+
+void saveMaze(int wallsBytecount)
+{
+    FILE *file = fopen(saveFileName, "w");
+    fprintf(file, "%d\n", rows);
+    fprintf(file, "%d\n", columns);
+
+    if(seed == NULL)
+    {
+        fprintf(file, "NULL\n");
+    }else
+    {
+        fprintf(file, "%d\n", seed);
+    }
+    
+    for(int i = 0; i < wallsBytecount; i++)
+    {
+        fprintf(file, "%d\n", walls[i]);
+    }
+
+    fclose(file);
 }

@@ -6,9 +6,13 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <getopt.h>
+#include <unistd.h>
 
 void generateMaze(int row, int column);
 int possibleDirection(int row, int column, int side);
-void printMaze();
+void printStdout();
+void loadMaze();
+void saveMaze(int wallsByteCount);
 
 #endif
