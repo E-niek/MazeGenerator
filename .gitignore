@@ -50,3 +50,12 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Other stuff
+run
+output
+test.c
+test_run
+test_output
+.vscode/
+*.maze
