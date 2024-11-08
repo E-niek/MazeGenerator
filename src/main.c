@@ -78,36 +78,53 @@ int main(int argc, char **argv)
         }
     }
 
-    // 0 of there is no wall, 1 if there is
-    int wallsBitcount = 2 * (rows * columns) - rows - columns;
-    int wallsBytecount = (wallsBitcount + 7) / 8;
-    walls = malloc(wallsBytecount);
-    clearBitset(walls, wallsBytecount);
-
-    // 0 if cell isn't visited, 1 if it is
-    int visitedBitcount = rows * columns;
-    int visitedBytecount = (visitedBitcount + 7) / 8;
-    visited = malloc(visitedBytecount);
-    // we don't need to use clearBitset() because default value already is 0
-
-    // we set the first bit to 1, because else the first cell is 'never visited'
-    writeBit(visited, 0, 1);
-
-    generateMaze(0, 0);
+    if(loadFromFile)
+    {
+        loadMaze();
+    }else
+    {
+        allocateMemory(true);
+        generateMaze(0, 0);
+    }
 
     if(printToStdout || loadFromFile)
     {
         printStdout();
     }
+
     if(saveToFile)
     {
-        saveMaze(wallsBytecount);
+        saveMaze();
     }
 
     free(walls);
     free(visited);
 
     return 0;
+}
+
+void allocateMemory(bool allocateVisited)
+{
+    // 0 of there is no wall, 1 if there is
+    int wallsBitcount = 2 * (rows * columns) - rows - columns;
+    // we add 1 to store the length of the array at index 0
+    int wallsBytecount = (wallsBitcount + 7) / 8 + 1;
+    walls = malloc(wallsBytecount);
+    clearBitset(walls, wallsBytecount);
+    walls[0] = wallsBytecount;
+
+    if(allocateVisited)
+    {
+        // 0 if cell isn't visited, 1 if it is
+        int visitedBitcount = rows * columns;
+        int visitedBytecount = (visitedBitcount + 7) / 8;
+        visited = malloc(visitedBytecount);
+        // we don't need to use clearBitset() because default value already is 0
+
+        // we set the first bit to 1, because else the first cell is 'never visited'
+        writeBit(visited, 0, 1);
+    }
+
 }
 
 void generateMaze(int row, int column)
@@ -203,7 +220,7 @@ void loadMaze()
 
     char buffer[6];
 
-    int row;
+    int row = 0;
     int wallsIndex = 0;
     while(fgets(buffer, 6, file))
     {
@@ -216,9 +233,8 @@ void loadMaze()
                 columns = atoi(buffer);
                 break;
             case 2:
-                int seedValue = atoi(buffer);
-                seed = strcmp(buffer, "NULL") == 0 ? NULL : &seedValue;
-                break;
+                allocateMemory(false);
+                // we don't break here, because after allocation we still need to store then value of row 2 in walls
             default:
                 walls[wallsIndex] = atoi(buffer);
                 wallsIndex++;
@@ -259,21 +275,13 @@ void printStdout()
     printf("%c", wall);
 }
 
-void saveMaze(int wallsBytecount)
+void saveMaze()
 {
     FILE *file = fopen(saveFileName, "w");
     fprintf(file, "%d\n", rows);
     fprintf(file, "%d\n", columns);
-
-    if(seed == NULL)
-    {
-        fprintf(file, "NULL\n");
-    }else
-    {
-        fprintf(file, "%d\n", *seed);
-    }
-    
-    for(int i = 0; i < wallsBytecount; i++)
+        
+    for(int i = 0; i < walls[0]; i++)
     {
         fprintf(file, "%d\n", walls[i]);
     }
