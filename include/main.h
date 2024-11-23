@@ -9,11 +9,11 @@
 #include <getopt.h>
 #include <unistd.h>
 
-void allocateMemory(bool allocateVisited);
-void generateMaze(int row, int column);
-int possibleDirection(int row, int column, int side);
+unsigned long long allocateMemory(bool allocateVisited);
+void generateMaze(unsigned int row, unsigned int column);
+int possibleDirection(unsigned int row, unsigned int column, uint8_t side);
 void printStdout();
 void loadMaze();
-void saveMaze();
+void saveMaze(unsigned long long wallsLength);
 
 #endif

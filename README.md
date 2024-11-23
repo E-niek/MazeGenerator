@@ -2,15 +2,19 @@
 Maze generator, written in C
 
 ### Options:
-- -r: amount of rows
-- -c: amount of columns
-- -s: seed
-- -o: output; file, stdout
-- -n: if the output is a file, specify the name of the file here
-- -f: input a file to generate the maze from
+- -r: number of rows
+- -c: number of columns
+- -s: seed for random generation
+- -o: output (file, stdout)
+- -n: specify output file name (if output is set to file)
+- -f: input file to generate the maze from
 - -h: show this help
 
 ### Compile and run:
 Run the following command to compile: ```gcc -I include/ src/*.c -o output```
 
-Then, run the program with ```./output [OPTIONS]```
+Then, run the program with: ```./output [OPTIONS]```
+
+> [!IMPORTANT]
+> If you want to create mazes with row/column numbers higher then a few hundred, you might need to set your stack limit.
+> This can e.g. be done with ulimit: ```ulimit -s unlimited```, or any size in bytes after -s.
