@@ -1,9 +1,9 @@
-#include "../include/main.h"
+#include "main.h"
 
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
-int rows = 20;
-int columns = 20;
+unsigned int rows = 20;
+unsigned int columns = 20;
 bitset walls;
 bitset visited;
 
@@ -78,12 +78,14 @@ int main(int argc, char **argv)
         }
     }
 
+    unsigned long long wallsLength;
+
     if(loadFromFile)
     {
         loadMaze();
     }else
     {
-        allocateMemory(true);
+        wallsLength = allocateMemory(true);
         generateMaze(0, 0);
     }
 
@@ -94,7 +96,7 @@ int main(int argc, char **argv)
 
     if(saveToFile)
     {
-        saveMaze();
+        saveMaze(wallsLength);
     }
 
     free(walls);
@@ -103,12 +105,11 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void allocateMemory(bool allocateVisited)
+unsigned long long allocateMemory(bool allocateVisited)
 {
     // 0 of there is no wall, 1 if there is
-    int wallsBitcount = 2 * (rows * columns) - rows - columns;
-    // we add 1 to store the length of the array at index 0
-    int wallsBytecount = (wallsBitcount + 7) / 8 + 1;
+    unsigned long long wallsBitcount = 2 * (rows * columns) - rows - columns;
+    unsigned long long wallsBytecount = (wallsBitcount + 7) / 8;
     walls = malloc(wallsBytecount);
     clearBitset(walls, wallsBytecount);
     walls[0] = wallsBytecount;
@@ -116,24 +117,25 @@ void allocateMemory(bool allocateVisited)
     if(allocateVisited)
     {
         // 0 if cell isn't visited, 1 if it is
-        int visitedBitcount = rows * columns;
-        int visitedBytecount = (visitedBitcount + 7) / 8;
+        unsigned long long visitedBitcount = rows * columns;
+        unsigned long long visitedBytecount = (visitedBitcount + 7) / 8;
         visited = malloc(visitedBytecount);
         // we don't need to use clearBitset() because default value already is 0
 
         // we set the first bit to 1, because else the first cell is 'never visited'
-        writeBit(visited, 0, 0, 1);
+        writeBit(visited, 0, 1);
     }
 
+    return wallsBytecount;
 }
 
-void generateMaze(int row, int column)
+void generateMaze(unsigned int row, unsigned int column)
 {
-    int currentRow = row;
-    int currentColumn = column;
+    unsigned int currentRow = row;
+    unsigned int currentColumn = column;
 
-    int possibleDirections = 0;
-    int directions[4];
+    uint8_t possibleDirections = 0;
+    uint8_t directions[4];
 
     for(int i = 0; i < 4; i++)
     {
@@ -153,27 +155,27 @@ void generateMaze(int row, int column)
     {
         case LEFT:
             // 'break' the left wall
-            writeBit(walls, 2 * (row * columns) - row + column - 1, 1, 0);
+            writeBit(walls, 2 * (row * columns) - row + column - 1, 0);
             column--;
             break;
         case RIGHT:
             // 'break' the right wall
-            writeBit(walls, 2 * (row * columns) - row + column, 1, 0);
+            writeBit(walls, 2 * (row * columns) - row + column, 0);
             column++;
             break;
         case UP:
             // 'break' the top wall
-            writeBit(walls, 2 * (row * columns) - row - columns + column, 1, 0);
+            writeBit(walls, 2 * (row * columns) - row - columns + column, 0);
             row--;
             break;
         case DOWN:
             // 'break' the bottom wall
-            writeBit(walls, 2 * (row * columns) - row + columns + column - 1, 1, 0);
+            writeBit(walls, 2 * (row * columns) - row + columns + column - 1, 0);
             row++;
             break;
     }
-
-    writeBit(visited, row * columns + column, 0, 1);
+    
+    writeBit(visited, row * columns + column, 1);
     generateMaze(row, column);
     
     // we substract one, because we already did go to one of the possible directions above
@@ -183,25 +185,25 @@ void generateMaze(int row, int column)
     }
 }
 
-int possibleDirection(int row, int column, int side)
+int possibleDirection(unsigned int row, unsigned int column, uint8_t side)
 {
     switch(side)
     {
         case LEFT:
             // calculate which bit is left to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row + column - 1, 1) == 1 && readBit(visited, row * columns + column - 1, 0) == 0 && column > 0 ? true : false;
+            return column > 0 && readBit(walls, 2 * (row * columns) - row + column - 1) == 1 && readBit(visited, row * columns + column - 1) == 0 ? true : false;
             break;
         case RIGHT:
             // calculate which bit is right to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row + column, 1) == 1 && readBit(visited, row * columns + column + 1, 0) == 0 && column < columns - 1 ? true : false;
+            return column < columns - 1 && readBit(walls, 2 * (row * columns) - row + column) == 1 && readBit(visited, row * columns + column + 1) == 0 ? true : false;
             break;
         case UP:
             // calculate which bit is up to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row - columns + column, 1) == 1 && readBit(visited, row * columns + column - columns, 0) == 0 && row > 0 ? true : false;
+            return row > 0 && readBit(walls, 2 * (row * columns) - row - columns + column) == 1 && readBit(visited, row * columns + column - columns) == 0 ? true : false;
             break;
         case DOWN:
             // calculate which bit is down to the row and column we are in
-            return readBit(walls, 2 * (row * columns) - row + columns + column - 1, 1) == 1 && readBit(visited, row * columns + column + columns, 0) == 0 && row < rows - 1 ? true : false;
+            return row < rows - 1 && readBit(walls, 2 * (row * columns) - row + columns + column - 1) == 1 && readBit(visited, row * columns + column + columns) == 0 ? true : false;
             break;
     }
     return false;
@@ -221,7 +223,7 @@ void loadMaze()
     char buffer[6];
 
     int row = 0;
-    int wallsIndex = 0;
+    long long wallsIndex = 0;
     while(fgets(buffer, 6, file))
     {
         switch(row)
@@ -250,38 +252,38 @@ void printStdout()
 {
     char wall = '#';
     char path = ' ';
-    
-    for(int row = 0; row < rows; row++)
+
+    for(unsigned int row = 0; row < rows; row++)
     {
-        for(int column = 0; column < columns; column++)
+        for(unsigned int column = 0; column < columns; column++)
         {
             // check the wall index above the current row and column
-            printf("%c %c ", wall, readBit(walls, 2 * (row * columns) - row - columns + column, 1) == 0 && row > 0 ? path : wall);
+            printf("%c %c ", wall, row > 0 && readBit(walls, 2 * (row * columns) - row - columns + column) == 0 ? path : wall);
         }
         printf("%c\n", wall);
 
-        for(int column = 0; column < columns; column++)
+        for(unsigned int column = 0; column < columns; column++)
         {
             // check the wall index left to the current row and column
-            printf("%c %c ", readBit(walls, 2 * (row * columns) - row + column - 1, 1) == 0 && column > 0 ? path : wall, path);
+            printf("%c %c ", column > 0 && readBit(walls, 2 * (row * columns) - row + column - 1) == 0 ? path : wall, path);
         }
         printf("%c\n", wall);
     }
 
-    for(int column = 0; column < columns; column++)
+    for(unsigned int column = 0; column < columns; column++)
     {
             printf("%c %c ", wall, wall);
     }
     printf("%c", wall);
 }
 
-void saveMaze()
+void saveMaze(unsigned long long wallsLength)
 {
     FILE *file = fopen(saveFileName, "w");
     fprintf(file, "%d\n", rows);
     fprintf(file, "%d\n", columns);
         
-    for(int i = 0; i < walls[0]; i++)
+    for(unsigned long long i = 0; i < wallsLength; i++)
     {
         fprintf(file, "%d\n", walls[i]);
     }
