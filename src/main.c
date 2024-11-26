@@ -2,15 +2,16 @@
 
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
-unsigned int rows = 20;
-unsigned int columns = 20;
+unsigned short rows = 20;
+unsigned short columns = 20;
 bitset walls;
 bitset visited;
 
 int *seed = NULL;
 bool printToStdout = true;
-bool saveToFile = false;
-char *saveFileName = "maze.maze";
+bool saveAsMaze = false;
+bool saveAsImg = false;
+char saveFileName[100] = "maze";
 bool loadFromFile = false;
 char *loadFileName;
 
@@ -23,11 +24,11 @@ void printHelp()
         "USAGE: %s [OPTIONS]\n"
         "\n"
         "Available options:\n"
-        "   -r: " "amount of rows\n"
-        "   -c: " "amount of columns\n"
+        "   -r: " "number of rows\n"
+        "   -c: " "number of columns\n"
         "   -s: " "seed\n"
-        "   -o: " "output; file, stdout\n"
-        "   -n: " "if the output is a file, specify the name of the file here\n"
+        "   -o: " "output; img, stdout\n"
+        "   -n: " "if the output is a img, specify the name of the img here\n"
         "   -f: " "input a file to generate the maze from\n"
         "   -h: " "shows this help"
         "\n", fileName
@@ -61,10 +62,16 @@ int main(int argc, char **argv)
                 break;
             case 'o':
                 printToStdout = strstr(optarg, "stdout") == NULL ? false : true;
-                saveToFile = strstr(optarg, "file") != NULL ? true : false;
+                saveAsMaze = strstr(optarg, "file") != NULL ? true : false;
+                saveAsImg = strstr(optarg, "img") != NULL ? true : false;
                 break;
             case 'n':
-                saveFileName = optarg;
+                if(strlen(optarg) > 100)
+                {
+                    printf("ERROR: Filename exceeds max length of 100\n");
+                    exit(1);
+                }
+                strcpy(saveFileName, optarg);
                 break;
             case 'f':
                 loadFromFile = true;
@@ -94,9 +101,13 @@ int main(int argc, char **argv)
         printStdout();
     }
 
-    if(saveToFile)
+    if(saveAsMaze)
     {
         saveMaze(wallsLength);
+    }
+    if(saveAsImg)
+    {
+        saveImg();
     }
 
     free(walls);
@@ -112,7 +123,6 @@ unsigned long long allocateMemory(bool allocateVisited)
     unsigned long long wallsBytecount = (wallsBitcount + 7) / 8;
     walls = malloc(wallsBytecount);
     clearBitset(walls, wallsBytecount);
-    walls[0] = wallsBytecount;
 
     if(allocateVisited)
     {
@@ -131,8 +141,8 @@ unsigned long long allocateMemory(bool allocateVisited)
 
 void generateMaze(unsigned int row, unsigned int column)
 {
-    unsigned int currentRow = row;
-    unsigned int currentColumn = column;
+    unsigned short currentRow = row;
+    unsigned short currentColumn = column;
 
     uint8_t possibleDirections = 0;
     uint8_t directions[4];
@@ -253,16 +263,16 @@ void printStdout()
     char wall = '#';
     char path = ' ';
 
-    for(unsigned int row = 0; row < rows; row++)
+    for(unsigned short row = 0; row < rows; row++)
     {
-        for(unsigned int column = 0; column < columns; column++)
+        for(unsigned short column = 0; column < columns; column++)
         {
             // check the wall index above the current row and column
             printf("%c %c ", wall, row > 0 && readBit(walls, 2 * (row * columns) - row - columns + column) == 0 ? path : wall);
         }
         printf("%c\n", wall);
 
-        for(unsigned int column = 0; column < columns; column++)
+        for(unsigned short column = 0; column < columns; column++)
         {
             // check the wall index left to the current row and column
             printf("%c %c ", column > 0 && readBit(walls, 2 * (row * columns) - row + column - 1) == 0 ? path : wall, path);
@@ -270,7 +280,7 @@ void printStdout()
         printf("%c\n", wall);
     }
 
-    for(unsigned int column = 0; column < columns; column++)
+    for(unsigned short column = 0; column < columns; column++)
     {
             printf("%c %c ", wall, wall);
     }
@@ -279,14 +289,54 @@ void printStdout()
 
 void saveMaze(unsigned long long wallsLength)
 {
-    FILE *file = fopen(saveFileName, "w");
+    char *fileNameBuffer = saveFileName;
+
+    FILE *file = fopen(strcat(fileNameBuffer, ".maze"), "w");
     fprintf(file, "%d\n", rows);
     fprintf(file, "%d\n", columns);
-        
+
     for(unsigned long long i = 0; i < wallsLength; i++)
-    {
+        {
         fprintf(file, "%d\n", walls[i]);
     }
 
     fclose(file);
+}
+
+void saveImg()
+{
+    char *fileNameBuffer = saveFileName;
+
+    unsigned int width = columns * 2 + 1;
+    unsigned int height = rows * 2 + 1;
+
+    uint8_t dataBGRA[width * height];
+
+    // this function is not intended for this use, but it works
+    clearBitset(dataBGRA, width * height);
+
+    dataBGRA[31] = 0;
+    
+    for(unsigned short row = 0; row < rows * 2; row++)
+    {
+        for(unsigned short column = 0; column < columns * 2; column++)
+        {
+           dataBGRA[row * width + column] = 0;
+        }
+
+        dataBGRA[row * width + columns * 2] = 0;
+
+        for(unsigned short column = 0; column < columns * 2; column++)
+        {
+
+        }
+    }
+
+    for(unsigned short column = 0; column < columns * 2; column++)
+    {
+        dataBGRA[(rows * 2) * width + column] = 0;
+    }
+    dataBGRA[width * height - 1] = 0;
+
+    writeImage(strcat(fileNameBuffer, ".tga"), width, height, dataBGRA, 1, 3);
 }
