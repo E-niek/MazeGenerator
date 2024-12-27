@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <time.h>
 
-int randInt(int min, int max, int* seed);
+void setSeed(int *seed);
+int randInt(int min, int max);
 
 #endif

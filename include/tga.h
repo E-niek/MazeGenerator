@@ -1,4 +1,4 @@
-// This code is stolen from a Github gist :), so, thanks Nick Klingensmith
+// This code is stolen from a Github gist, so, thanks Nick Klingensmith
 // Check it out here: https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22
 
 #ifndef TGA_H
