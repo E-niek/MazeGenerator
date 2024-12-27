@@ -2,18 +2,10 @@
 
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
-unsigned short rows = 20;
-unsigned short columns = 20;
+unsigned short rows;
+unsigned short columns;
 bitset walls;
 bitset visited;
-
-int *seed = NULL;
-bool printToStdout = true;
-bool saveAsMaze = false;
-bool saveAsImg = false;
-char saveFileName[100] = "maze";
-bool loadFromFile = false;
-char *loadFileName;
 
 char *fileName;
 
@@ -24,30 +16,43 @@ void printHelp()
         "USAGE: %s [OPTIONS]\n"
         "\n"
         "Available options:\n"
-        "   -r: " "number of rows\n"
-        "   -c: " "number of columns\n"
-        "   -s: " "seed\n"
-        "   -o: " "output; img, stdout\n"
-        "   -n: " "if the output is a img, specify the name of the img here\n"
-        "   -f: " "input a file to generate the maze from\n"
-        "   -h: " "shows this help"
+        "   -r: number of rows\n"
+        "   -c: number of columns\n"
+        "   -s: seed\n"
+        "   -o: output; stdout, file, img\n"
+        "   -n: if the output is a file or img, specify the name here\n"
+        "   -f: input a file to generate the maze from\n"
+        "   -h: shows this help"
         "\n", fileName
     );
+
+    exit(0);
 }
 
 int main(int argc, char **argv)
 {
+    int *seed = NULL;
+    bool printToStdout = true;
+    bool saveAsMaze = false;
+    char saveMazeName[100] = "maze";
+    bool saveAsImg = false;
+    char saveImgName[100] = "maze";
+    bool loadFromMaze = false;
+    char loadMazeName[100];
+    
     fileName = argv[0];
 
     if(argc == 1)
     {
         printHelp();
-        exit(0);
     }
 
-    int option;
+    int option = 0;
+    bool noOption = true;
     while((option = getopt(argc, argv, "r:c:s:o:n:f:h")) != -1)
     {
+        noOption = false;
+
         switch(option)
         {
             case 'r':
@@ -61,53 +66,64 @@ int main(int argc, char **argv)
                 seed = &seedValue;
                 break;
             case 'o':
-                printToStdout = strstr(optarg, "stdout") == NULL ? false : true;
-                saveAsMaze = strstr(optarg, "file") != NULL ? true : false;
-                saveAsImg = strstr(optarg, "img") != NULL ? true : false;
+                printToStdout = strstr(optarg, "stdout");
+                saveAsMaze = strstr(optarg, "file");
+                saveAsImg = strstr(optarg, "img");
                 break;
             case 'n':
                 if(strlen(optarg) > 100)
                 {
-                    printf("ERROR: Filename exceeds max length of 100\n");
+                    fprintf(stderr, "ERROR: Filename exceeds max length of 100\n");
                     exit(1);
                 }
-                strcpy(saveFileName, optarg);
+                strcpy(saveMazeName, optarg);
+                strcpy(saveImgName, optarg);
                 break;
             case 'f':
-                loadFromFile = true;
-                loadFileName = optarg;
+                loadFromMaze = true;
+                if(strlen(optarg) > 100)
+                {
+                    fprintf(stderr, "ERROR: Filename exceeds max length of 100\n");
+                    exit(1);
+                }
+                strcpy(loadMazeName, optarg);
                 break;
             case 'h':
-            case '?':
+            default:
                 printHelp();
-                exit(1);
                 break;
         }
     }
 
-    unsigned long long wallsLength;
-
-    if(loadFromFile)
+    if(noOption)
     {
-        loadMaze();
+        printHelp();
+    }
+
+    setSeed(seed);
+
+    unsigned int wallsLength;
+
+    if(loadFromMaze)
+    {
+        loadMaze(loadMazeName);
     }else
     {
         wallsLength = allocateMemory(true);
         generateMaze(0, 0);
     }
 
-    if(printToStdout || loadFromFile)
+    if(printToStdout)
     {
         printStdout();
     }
-
     if(saveAsMaze)
     {
-        saveMaze(wallsLength);
+        saveMaze(wallsLength, saveMazeName);
     }
     if(saveAsImg)
     {
-        saveImg();
+        saveImg(saveImgName);
     }
 
     free(walls);
@@ -118,15 +134,13 @@ int main(int argc, char **argv)
 
 unsigned long long allocateMemory(bool allocateVisited)
 {
-    // 0 of there is no wall, 1 if there is
-    unsigned long long wallsBitcount = 2 * (rows * columns) - rows - columns;
-    unsigned long long wallsBytecount = (wallsBitcount + 7) / 8;
+    unsigned int wallsBitcount = 2 * (rows * columns) - rows - columns;
+    unsigned int wallsBytecount = (wallsBitcount + 7) / 8;
     walls = malloc(wallsBytecount);
     clearBitset(walls, wallsBytecount);
 
     if(allocateVisited)
     {
-        // 0 if cell isn't visited, 1 if it is
         unsigned long long visitedBitcount = rows * columns;
         unsigned long long visitedBytecount = (visitedBitcount + 7) / 8;
         visited = malloc(visitedBytecount);
@@ -136,6 +150,7 @@ unsigned long long allocateMemory(bool allocateVisited)
         writeBit(visited, 0, 1);
     }
 
+    // return the length of the walls array, for if we save the maze
     return wallsBytecount;
 }
 
@@ -161,7 +176,7 @@ void generateMaze(unsigned int row, unsigned int column)
         return;
     }
 
-    switch(directions[randInt(0, possibleDirections - 1, seed)])
+    switch(directions[randInt(0, possibleDirections - 1)])
     {
         case LEFT:
             // 'break' the left wall
@@ -201,33 +216,32 @@ int possibleDirection(unsigned int row, unsigned int column, uint8_t side)
     {
         case LEFT:
             // calculate which bit is left to the row and column we are in
-            return column > 0 && readBit(walls, 2 * (row * columns) - row + column - 1) == 1 && readBit(visited, row * columns + column - 1) == 0 ? true : false;
+            return column > 0 && readBit(walls, 2 * row * columns - row + column - 1) == 1 && readBit(visited, row * columns + column - 1) == 0 ? true : false;
             break;
         case RIGHT:
             // calculate which bit is right to the row and column we are in
-            return column < columns - 1 && readBit(walls, 2 * (row * columns) - row + column) == 1 && readBit(visited, row * columns + column + 1) == 0 ? true : false;
+            return column < columns - 1 && readBit(walls, 2 * row * columns - row + column) == 1 && readBit(visited, row * columns + column + 1) == 0 ? true : false;
             break;
         case UP:
             // calculate which bit is up to the row and column we are in
-            return row > 0 && readBit(walls, 2 * (row * columns) - row - columns + column) == 1 && readBit(visited, row * columns + column - columns) == 0 ? true : false;
+            return row > 0 && readBit(walls, 2 * row * columns - row - columns + column) == 1 && readBit(visited, row * columns + column - columns) == 0 ? true : false;
             break;
         case DOWN:
             // calculate which bit is down to the row and column we are in
-            return row < rows - 1 && readBit(walls, 2 * (row * columns) - row + columns + column - 1) == 1 && readBit(visited, row * columns + column + columns) == 0 ? true : false;
+            return row < rows - 1 && readBit(walls, 2 * row * columns - row + columns + column - 1) == 1 && readBit(visited, row * columns + column + columns) == 0 ? true : false;
             break;
     }
     return false;
 }
 
-void loadMaze()
+void loadMaze(char *loadMazeName)
 {
-    FILE *file = fopen(loadFileName, "r");
+    FILE *file = fopen(loadMazeName, "r");
 
     if(file == NULL)
     {
-        fprintf(stderr, "%s: cannot open file -- '%s'\n", fileName, loadFileName);
+        fprintf(stderr, "%s: cannot open file -- '%s'\n", fileName, loadMazeName);
         printHelp();
-        exit(1);
     }
 
     char buffer[6];
@@ -268,14 +282,14 @@ void printStdout()
         for(unsigned short column = 0; column < columns; column++)
         {
             // check the wall index above the current row and column
-            printf("%c %c ", wall, row > 0 && readBit(walls, 2 * (row * columns) - row - columns + column) == 0 ? path : wall);
+            printf("%c %c ", wall, row > 0 && readBit(walls, 2 * row * columns - row - columns + column) == 0 ? path : wall);
         }
         printf("%c\n", wall);
 
         for(unsigned short column = 0; column < columns; column++)
         {
             // check the wall index left to the current row and column
-            printf("%c %c ", column > 0 && readBit(walls, 2 * (row * columns) - row + column - 1) == 0 ? path : wall, path);
+            printf("%c %c ", column > 0 && readBit(walls, 2 * row * columns - row + column - 1) == 0 ? path : wall, path);
         }
         printf("%c\n", wall);
     }
@@ -287,11 +301,11 @@ void printStdout()
     printf("%c", wall);
 }
 
-void saveMaze(unsigned long long wallsLength)
+void saveMaze(unsigned int wallsLength, char *saveMazeName)
 {
-    char *fileNameBuffer = saveFileName;
+    char *mazeNameBuffer = saveMazeName;
 
-    FILE *file = fopen(strcat(fileNameBuffer, ".maze"), "w");
+    FILE *file = fopen(strcat(mazeNameBuffer, ".maze"), "w");
     fprintf(file, "%d\n", rows);
     fprintf(file, "%d\n", columns);
 
@@ -303,40 +317,47 @@ void saveMaze(unsigned long long wallsLength)
     fclose(file);
 }
 
-void saveImg()
+void saveImg(char *saveImgName)
 {
-    char *fileNameBuffer = saveFileName;
+    char *imgNameBuffer = saveImgName;
 
     unsigned int width = columns * 2 + 1;
     unsigned int height = rows * 2 + 1;
 
     uint8_t dataBGRA[width * height];
 
-    // this function is not intended for this use, but it works
-    clearBitset(dataBGRA, width * height);
+    int wall = 0;
+    int path = UINT8_MAX;
 
-    dataBGRA[31] = 0;
-    
-    for(unsigned short row = 0; row < rows * 2; row++)
+    for(unsigned short row = 0; row < rows; row++)
     {
-        for(unsigned short column = 0; column < columns * 2; column++)
+        for(unsigned short column = 0; column < columns; column++)
         {
-           dataBGRA[row * width + column] = 0;
-        }
-
-        dataBGRA[row * width + columns * 2] = 0;
-
-        for(unsigned short column = 0; column < columns * 2; column++)
-        {
+            int index = 2 * row * width + column * 2;
+            dataBGRA[index] = wall;
+            // check the wall index above the current row and column
+            dataBGRA[index + 1] = row > 0 && readBit(walls, 2 * row * columns - row - columns + column) == 0 ? path : wall;
 
         }
+        dataBGRA[2 * row * width + width - 1] = wall;
+
+        for(unsigned short column = 0; column < columns; column++)
+        {
+            int index = 2 * row * width + width + column * 2;
+            // check the wall index left to the current row and column
+            dataBGRA[index] = column > 0 && readBit(walls, 2 * row * columns - row + column - 1) == 0 ? path : wall;
+            dataBGRA[index + 1] = path;
+        }
+        dataBGRA[2 * row * width + width * 2 - 1] = wall;
     }
 
-    for(unsigned short column = 0; column < columns * 2; column++)
+    for(unsigned short column = 0; column < columns; column++)
     {
-        dataBGRA[(rows * 2) * width + column] = 0;
+        int index = 2 * rows * width + column * 2;
+        dataBGRA[index] = wall;
+        dataBGRA[index + 1] = wall;
     }
-    dataBGRA[width * height - 1] = 0;
+    dataBGRA[width * height - 1] = wall;
 
-    writeImage(strcat(fileNameBuffer, ".tga"), width, height, dataBGRA, 1, 3);
+    writeImage(strcat(imgNameBuffer, ".tga"), width, height, dataBGRA, 1, 3);
 }

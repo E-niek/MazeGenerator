@@ -14,8 +14,8 @@ unsigned long long allocateMemory(bool allocateVisited);
 void generateMaze(unsigned int row, unsigned int column);
 int possibleDirection(unsigned int row, unsigned int column, uint8_t side);
 void printStdout();
-void loadMaze();
-void saveMaze(unsigned long long wallsLength);
-void saveImg();
+void loadMaze(char *loadMazeName);
+void saveMaze(unsigned int wallsLength, char *saveMazeName);
+void saveImg(char *saveImgName);
 
 #endif
