@@ -5,10 +5,13 @@ Maze generator, written in C
 - -r: number of rows
 - -c: number of columns
 - -s: seed for random generation
-- -o: output (file, stdout)
-- -n: specify output file name (if output is set to file)
+- -o: output; stdout, file, img
+- -n: if the output is a file or img, specify the name here
 - -f: input file to generate the maze from
 - -h: show this help
+
+### Image
+The image is saved as a .tga file. This is unfortunately not a widely supported image format, so if you want, you can convert it here (e.g. to png or jpg): https://convert.karos.dev
 
 ### Compile and run:
 Run the following command to compile: ```gcc -I include/ src/*.c -o output```

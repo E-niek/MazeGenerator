@@ -1,16 +1,11 @@
 #include "random.h"
 
-unsigned randomIndex = 0;
-
-int randInt(int min, int max, int *seed)
+void setSeed(int *seed)
 {
-    if(randomIndex >= INT32_MAX)
-    {
-        randomIndex = 0;
-    }
+    srand(seed == NULL ? time(0): *seed);
+}
 
-    srand(seed == NULL ? time(0) + randomIndex : *seed + randomIndex);
-    randomIndex ++;
-
+int randInt(int min, int max)
+{
     return (rand() % (max + 1 - min)) + min;
 }
