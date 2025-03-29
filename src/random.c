@@ -1,4 +1,6 @@
 #include "random.h"
+#include <stdlib.h>
+#include <time.h>
 
 void setSeed(int *seed)
 {

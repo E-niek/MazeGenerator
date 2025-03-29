@@ -1,4 +1,12 @@
 #include "main.h"
+#include "bitset.h"
+#include "random.h"
+#include <tga.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <getopt.h>
+#include <string.h>
 
 enum Direction { LEFT, RIGHT, UP, DOWN };
 
